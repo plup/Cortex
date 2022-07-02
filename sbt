@@ -2,7 +2,7 @@
 
 # From https://github.com/twitter/util
 
-SBT_VER=1.1.6
+SBT_VER=1.1.13
 SBT_JAR=sbt-launch.jar
 SBT_SHA128=e3dfecc05d04a8b4bfdb43e5246f48ced1570a32
 
@@ -27,7 +27,6 @@ java -ea                          \
   ${JAVA_OPTS}                    \
   -Djava.net.preferIPv4Stack=true \
   -XX:+AggressiveOpts             \
-  -XX:+UseParNewGC                \
   -XX:+UseConcMarkSweepGC         \
   -XX:+CMSParallelRemarkEnabled   \
   -XX:+CMSClassUnloadingEnabled   \
