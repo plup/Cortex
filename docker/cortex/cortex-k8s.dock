@@ -1,0 +1,25 @@
+FROM thehiveproject/drone-scala-node AS builder
+LABEL maintainer="Plup <plup@plup.io>"
+WORKDIR /code
+ENV NODE_VERSION 12.18
+COPY . .
+#RUN sbt -no-colors --error "print cortex/version" | tail -1 > /cortex-version.txt
+RUN . ~/.nvm/nvm.sh && \
+    nvm install ${NODE_VERSION} && \
+    npm install -g bower && \
+    sbt -Duser.home=$PWD Docker/stage
+
+FROM openjdk:8-slim AS runner
+
+RUN useradd --system cortex
+COPY --from=builder --chown=cortex:cortex /code/target/docker/stage/opt /opt
+COPY --from=builder --chown=cortex:cortex /code/target/docker/stage/etc /etc
+COPY --from=builder --chown=cortex:cortex /code/target/docker/stage/var /var
+RUN chmod +x /opt/cortex/bin/cortex /opt/cortex/entrypoint
+
+WORKDIR /opt/cortex
+EXPOSE 9001
+ENTRYPOINT ["/opt/cortex/entrypoint"]
+CMD []
+
+# vim: ft=dockerfile:
