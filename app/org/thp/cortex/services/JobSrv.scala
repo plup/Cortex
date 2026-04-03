@@ -241,6 +241,9 @@ class JobSrv(
         "parameters": {
           "optional parameters": "value"
         }
+      }
+      Optional top-level keys in parameters: keepJobFolder (Boolean, keep job temp folder),
+      keepKubernetesJob (Boolean, when using the kubernetes runner, do not delete the Job after completion).
        */
       fields.getValue("attributes").map(attributes => legacyCreate(worker, attributes.as[JsObject], fields)).getOrElse {
         val dataType = Or.from(fields.getString("dataType"), One(MissingAttributeError("dataType")))

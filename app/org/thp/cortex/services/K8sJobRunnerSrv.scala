@@ -6,6 +6,7 @@ import io.fabric8.kubernetes.api.model.batch.v1.{JobBuilder => KJobBuilder}
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import org.thp.cortex.models._
 import org.thp.cortex.util.FunctionalCondition._
+import play.api.libs.json._
 import play.api.{Configuration, Logger}
 
 import java.nio.file._
@@ -161,13 +162,18 @@ class K8sJobRunnerSrv(
         logger.info(s"Kubernetes Job for ${job.id} no longer exists")
       }
     }
-    // let's find the job by the attribute we know is fundamentally
-    // unique, rather than one constructed from it
-    val deleted: util.List[StatusDetails] = client.batch().v1().jobs().withLabel("cortex-job-id", jobLabel).delete()
-    if(!deleted.isEmpty) {
-      logger.info(s"Deleted Kubernetes Job for job ${job.id}")
+    val keepKubernetesJob = (job.params \ "keepKubernetesJob").asOpt[Boolean].contains(true)
+    if (keepKubernetesJob) {
+      logger.info(s"Keeping Kubernetes Job for job ${job.id} (keepKubernetesJob in parameters)")
     } else {
-      logger.info(s"While trying to delete Kubernetes Job for ${job.id}, the job was not found; this is OK")
+      // let's find the job by the attribute we know is fundamentally
+      // unique, rather than one constructed from it
+      val deleted: util.List[StatusDetails] = client.batch().v1().jobs().withLabel("cortex-job-id", jobLabel).delete()
+      if (!deleted.isEmpty) {
+        logger.info(s"Deleted Kubernetes Job for job ${job.id}")
+      } else {
+        logger.info(s"While trying to delete Kubernetes Job for ${job.id}, the job was not found; this is OK")
+      }
     }
     execution
   }
