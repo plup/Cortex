@@ -215,6 +215,16 @@ class JobRunnerSrv @Inject() (
       endJob(job, JobStatus.Failure, Some(s"no output"))
   }
 
+  /** True if job parameters or merged worker config (catalog definition config + org configuration) set keepKubernetesJob. */
+  private def shouldKeepKubernetesJob(job: Job, worker: Worker): Boolean = {
+    val fromParams = (job.params \ "keepKubernetesJob").asOpt[Boolean].contains(true)
+    val mergedConfig = workerSrv
+      .getDefinition(worker.workerDefinitionId())
+      .fold(_ => JsObject.empty, _.configuration)
+      .deepMerge(worker.config)
+    fromParams || (mergedConfig \ "keepKubernetesJob").asOpt[Boolean].contains(true)
+  }
+
   def run(worker: Worker, job: Job)(implicit authContext: AuthContext): Future[Job] = {
     val executionContext = worker.tpe() match {
       case WorkerType.analyzer  => analyzerExecutionContext
@@ -234,7 +244,15 @@ class JobRunnerSrv @Inject() (
           case (None, "kubernetes") =>
             worker
               .dockerImage()
-              .map(dockerImage => k8sJobRunnerSrv.run(jobFolder, dockerImage, job, worker.jobTimeout().map(_.minutes)))
+              .map(dockerImage =>
+                k8sJobRunnerSrv.run(
+                  jobFolder,
+                  dockerImage,
+                  job,
+                  worker.jobTimeout().map(_.minutes),
+                  shouldKeepKubernetesJob(job, worker)
+                )
+              )
               .orElse {
                 logger.warn(s"worker ${worker.id} can't be run with kubernetes (doesn't have image)")
                 None

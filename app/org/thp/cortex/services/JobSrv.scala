@@ -242,8 +242,9 @@ class JobSrv(
           "optional parameters": "value"
         }
       }
-      Optional top-level keys in parameters: keepJobFolder (Boolean, keep job temp folder),
-      keepKubernetesJob (Boolean, when using the kubernetes runner, do not delete the Job after completion).
+      Optional: keepJobFolder (Boolean in parameters, keep job temp folder).
+      Optional: keepKubernetesJob in parameters and/or in analyzer config (catalog "config" merged with org worker configuration):
+      when true and the kubernetes runner is used, the Kubernetes Job is not deleted after completion.
        */
       fields.getValue("attributes").map(attributes => legacyCreate(worker, attributes.as[JsObject], fields)).getOrElse {
         val dataType = Or.from(fields.getString("dataType"), One(MissingAttributeError("dataType")))

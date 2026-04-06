@@ -6,7 +6,6 @@ import io.fabric8.kubernetes.api.model.batch.v1.{JobBuilder => KJobBuilder}
 import io.fabric8.kubernetes.client.DefaultKubernetesClient
 import org.thp.cortex.models._
 import org.thp.cortex.util.FunctionalCondition._
-import play.api.libs.json._
 import play.api.{Configuration, Logger}
 
 import java.nio.file._
@@ -72,7 +71,7 @@ class K8sJobRunnerSrv(
         false
     }
 
-  def run(jobDirectory: Path, dockerImage: String, job: Job, timeout: Option[FiniteDuration]): Try[Unit] = {
+  def run(jobDirectory: Path, dockerImage: String, job: Job, timeout: Option[FiniteDuration], keepKubernetesJob: Boolean): Try[Unit] = {
     val cacertsFile = jobDirectory.resolve("input").resolve("cacerts")
     val relativeJobDirectory = jobBaseDirectory.relativize(jobDirectory).toString
     // make the default longer than likely values, but still not infinite
@@ -162,9 +161,8 @@ class K8sJobRunnerSrv(
         logger.info(s"Kubernetes Job for ${job.id} no longer exists")
       }
     }
-    val keepKubernetesJob = (job.params \ "keepKubernetesJob").asOpt[Boolean].contains(true)
     if (keepKubernetesJob) {
-      logger.info(s"Keeping Kubernetes Job for job ${job.id} (keepKubernetesJob in parameters)")
+      logger.info(s"Keeping Kubernetes Job for job ${job.id} (keepKubernetesJob enabled)")
     } else {
       // let's find the job by the attribute we know is fundamentally
       // unique, rather than one constructed from it
